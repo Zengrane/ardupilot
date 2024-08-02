@@ -161,7 +161,7 @@ void AC_WPNav::wp_and_spline_init(float speed_cms, Vector3f stopping_point)
     // check _wp_speed
     _wp_speed_cms.set_and_save_ifchanged(MAX(_wp_speed_cms, WPNAV_WP_SPEED_MIN));
 
-    // initialise position controller
+    // initialise position controller.  this also clears position and velocity offsets
     _pos_control.init_z_controller_stopping_point();
     _pos_control.init_xy_controller_stopping_point();
 
@@ -465,11 +465,15 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     }
     const float offset_z_scaler = _pos_control.pos_offset_z_scaler(terr_offset, get_terrain_margin() * 100.0);
 
-    // input shape the terrain offset
+    // input shape the horizontal and terrain offsets
+    _pos_control.update_xy_offsets();
     _pos_control.update_pos_offset_z(terr_offset);
 
+    // get position controller's position offset (post input shaping) so it can be used in position error calculation
+    const Vector3p& psc_pos_offset = _pos_control.get_pos_offset_cm();
+
     // get current position and adjust altitude to origin and destination's frame (i.e. _frame)
-    const Vector3f &curr_pos = _inav.get_position_neu_cm() - Vector3f{0, 0, terr_offset};
+    const Vector3f &curr_pos = _inav.get_position_neu_cm() - Vector3f{psc_pos_offset.tofloat().x, psc_pos_offset.tofloat().y, terr_offset};
     Vector3f curr_target_vel = _pos_control.get_vel_desired_cms();
     curr_target_vel.z -= _pos_control.get_vel_offset_z_cms();
 
@@ -529,9 +533,9 @@ bool AC_WPNav::advance_wp_target_along_track(float dt)
     target_accel += accel_offset;
 
     // convert final_target.z to altitude above the ekf origin
-    target_pos.z += _pos_control.get_pos_offset_z_cm();
-    target_vel.z += _pos_control.get_vel_offset_z_cms();
-    target_accel.z += _pos_control.get_accel_offset_z_cmss();
+    target_pos += _pos_control.get_pos_offset_cm().tofloat();
+    target_vel += _pos_control.get_vel_offset_cms();
+    target_accel += _pos_control.get_accel_offset_cmss();
 
     // pass new target to the position controller
     _pos_control.set_pos_vel_accel(target_pos.topostype(), target_vel, target_accel);
