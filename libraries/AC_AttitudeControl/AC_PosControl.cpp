@@ -538,12 +538,12 @@ void AC_PosControl::init_xy_controller()
     _accel_target.xy().limit_length(accel_max);
 
     // initialise horizontal offsets
-    _xy_offset_type = XYOffsetType::POSITION;
+    /*_xy_offset_type = XYOffsetType::POSITION;
     _pos_offset_target.xy().zero();
     _pos_offset.xy().zero();
     _vel_offset_target.zero();
     _vel_offset.xy().zero();
-    _accel_offset.xy().zero();
+    _accel_offset.xy().zero();*/
 
     // initialise I terms from lean angles
     _pid_vel_xy.reset_filter();
