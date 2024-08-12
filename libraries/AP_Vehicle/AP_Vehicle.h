@@ -296,6 +296,9 @@ public:
     virtual bool set_home(const Location& loc, bool lock) WARN_IF_UNUSED { return false; }
 #endif
 
+    // Check for pilot input
+    bool have_pilot_input() const;
+
 protected:
 
     virtual void init_ardupilot() = 0;

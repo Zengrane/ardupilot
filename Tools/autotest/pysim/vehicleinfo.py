@@ -208,6 +208,15 @@ class VehicleInfo(object):
                     "models/freestyle.param",
                 ],
             },
+            "freestyle-untuned": {
+                "model": "X:@ROMFS/models/freestyle.json",
+                "waf_target": "bin/arducopter",
+                "default_params_filename": [
+                    "default_params/copter.parm",
+                    "default_params/copter-X.parm",
+                    "models/freestyle-untuned.param",
+                ],
+            },
         },
     },
     "Helicopter": {

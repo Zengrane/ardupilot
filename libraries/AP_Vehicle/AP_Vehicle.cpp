@@ -998,6 +998,21 @@ void AP_Vehicle::get_osd_roll_pitch_rad(float &roll, float &pitch) const
 #endif
 }
 
+// Check for pilot input
+bool AP_Vehicle::have_pilot_input() const
+{
+    const auto &rcmap = *AP::rcmap();
+    float roll = rc().rc_channel(rcmap.roll()-1)->norm_input_dz();
+    float pitch = rc().rc_channel(rcmap.pitch()-1)->norm_input_dz();
+    float yaw = rc().rc_channel(rcmap.yaw()-1)->norm_input_dz();
+
+    if (fabsf(roll) > 0 || fabsf(pitch) > 0 || fabsf(yaw) > 0) {
+        return true;
+    }
+    return false;
+}
+
+
 #if HAL_INS_ACCELCAL_ENABLED
 
 #ifndef HAL_CAL_ALWAYS_REBOOT

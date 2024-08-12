@@ -359,6 +359,7 @@ public:
         k_param_autotune_options,
         k_param_takeoff_throttle_min,
         k_param_takeoff_options,
+        k_param_quicktune,
     };
 
     AP_Int16 format_version;
