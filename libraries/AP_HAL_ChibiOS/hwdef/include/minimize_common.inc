@@ -133,3 +133,6 @@ define AP_AIRSPEED_DRONECAN_ENABLED HAL_ENABLE_DRONECAN_DRIVERS
 define AP_MISSION_NAV_PAYLOAD_PLACE_ENABLED 0
 # don't need the payload place flight behaviour either:
 define AC_PAYLOAD_PLACE_ENABLED 0
+
+# don't send extra flight information on small boards
+define AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED 0

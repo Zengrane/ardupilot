@@ -247,6 +247,7 @@ class ExtractFeatures(object):
             ('AP_MAVLINK_MSG_RC_CHANNELS_RAW_ENABLED', 'GCS_MAVLINK::send_rc_channels_raw\b'),
             ('AP_MAVLINK_FTP_ENABLED', 'GCS_MAVLINK::ftp_worker'),
             ('AP_MAVLINK_MAV_CMD_SET_HAGL_ENABLED', 'Plane::get_external_HAGL'),
+            ('AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED', 'GCS_MAVLINK::send_flight_information\b'),
 
             ('AP_DRONECAN_HIMARK_SERVO_SUPPORT', 'AP_DroneCAN::SRV_send_himark'),
             ('AP_DRONECAN_HOBBYWING_ESC_SUPPORT', 'AP_DroneCAN::hobbywing_ESC_update'),

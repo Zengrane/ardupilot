@@ -97,5 +97,8 @@ enum ap_message : uint8_t {
 #if AP_MAVLINK_MSG_HIGHRES_IMU_ENABLED
     MSG_HIGHRES_IMU,
 #endif
+#if AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
+    MSG_FLIGHT_INFORMATION,
+#endif
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };

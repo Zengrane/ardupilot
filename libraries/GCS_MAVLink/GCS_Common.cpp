@@ -5965,6 +5965,55 @@ void GCS_MAVLINK::send_autopilot_state_for_gimbal_device() const
 #endif  // AP_AHRS_ENABLED
 }
 
+#if AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
+void GCS_MAVLINK::send_flight_information()
+{
+    const uint64_t time_boot_us = AP_HAL::millis64();
+
+    // This field is misnamed as `arming_time_utc` in MAVLink. However, it is
+    // not a UTC time, it is the microseconds since boot.
+    const uint64_t arm_time_us = AP::arming().arm_time_us();
+
+    const MAV_LANDED_STATE current_landed_state = landed_state();
+    if (flight_info.last_landed_state != current_landed_state) {
+        switch (current_landed_state) {
+            case MAV_LANDED_STATE_IN_AIR:
+            case MAV_LANDED_STATE_TAKEOFF:
+            case MAV_LANDED_STATE_LANDING:
+                if (!flight_info.takeoff_time_us) {
+                    flight_info.takeoff_time_us = time_boot_us;
+                }
+                break;
+
+            case MAV_LANDED_STATE_ON_GROUND: 
+                flight_info.takeoff_time_us = 0;
+                break;
+
+            case MAV_LANDED_STATE_UNDEFINED:
+            case MAV_LANDED_STATE_ENUM_END:
+                break;
+        }
+
+        flight_info.last_landed_state = current_landed_state;
+    }
+
+    // This field is misnamed as `takeoff_time_utc` in MAVLink. However, it is
+    // not a UTC time, it is the microseconds since boot.
+    uint64_t takeoff_time_us = flight_info.takeoff_time_us;
+
+    // This field is misnamed as `flight_uuid` in MAVLink.
+    const uint64_t flight_number = 0;
+
+    mavlink_msg_flight_information_send(
+        chan,
+        time_boot_us,
+        arm_time_us,
+        takeoff_time_us,
+        flight_number
+    );
+}
+#endif // AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
+
 void GCS_MAVLINK::send_received_message_deprecation_warning(const char * message)
 {
     // we're not expecting very many of these ever, so a tiny bit of
@@ -6393,6 +6442,13 @@ bool GCS_MAVLINK::try_send_message(const enum ap_message id)
 #if AP_MAVLINK_MSG_RELAY_STATUS_ENABLED
     case MSG_RELAY_STATUS:
         ret = send_relay_status();
+        break;
+#endif
+
+#if AP_MAVLINK_MSG_FLIGHT_INFORMATION_ENABLED
+    case MSG_FLIGHT_INFORMATION:
+        CHECK_PAYLOAD_SIZE(FLIGHT_INFORMATION);
+        send_flight_information();
         break;
 #endif
 
