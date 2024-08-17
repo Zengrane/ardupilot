@@ -638,7 +638,6 @@ float AP_Quicktune::get_param_value(AP_Quicktune::Param param)
     if (ptr != nullptr) {
         return ptr->get();
     }
-    INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
     return 0.0;
 }
 
@@ -649,7 +648,6 @@ void AP_Quicktune::set_param_value(AP_Quicktune::Param param, float value)
        ptr->set(value);
        return;
     }
-    INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
 }
 
 void AP_Quicktune::set_and_save_param_value(AP_Quicktune::Param param, float value)
@@ -659,7 +657,6 @@ void AP_Quicktune::set_and_save_param_value(AP_Quicktune::Param param, float val
        ptr->set_and_save(value);
        return;
     }
-    INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
 }
 
 AP_Quicktune::AxisName AP_Quicktune::get_axis(AP_Quicktune::Param param)
