@@ -185,13 +185,10 @@ void AP_Quicktune::update(bool mode_supports_quicktune)
         reset_axes_done();
         return;
     }
-    if (sw_pos == sw_pos_save) {
-        // Save all params
-        if (need_restore) {
-            need_restore = false;
-            save_all_params();
-            GCS_SEND_TEXT(MAV_SEVERITY_NOTICE, "Tuning: Saved");
-        }
+    if (sw_pos == sw_pos_save && need_restore) {
+        need_restore = false;
+        save_all_params();
+        GCS_SEND_TEXT(MAV_SEVERITY_NOTICE, "Tuning: Saved");
     }
     if (sw_pos != sw_pos_tune) {
         return;
