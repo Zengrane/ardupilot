@@ -855,7 +855,8 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_do_reposition(const mavlink_com
     if (((int32_t)packet.param2 & MAV_DO_REPOSITION_FLAGS_CHANGE_MODE) ||
         (plane.control_mode == &plane.mode_guided)) {
         plane.set_mode(plane.mode_guided, ModeReason::GCS_COMMAND);
-
+        plane.guided_state.target_heading_type = GUIDED_HEADING_NONE;
+        
         // add home alt if needed
         if (requested_position.relative_alt) {
             requested_position.alt += plane.home.alt;
@@ -863,7 +864,7 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_do_reposition(const mavlink_com
         }
 
         plane.set_guided_WP(requested_position);
-
+    
         // Loiter radius for planes. Positive radius in meters, direction is controlled by Yaw (param4) value, parsed above
         if (!isnan(packet.param3) && packet.param3 > 0) {
             plane.mode_guided.set_radius_and_direction(packet.param3, requested_position.loiter_ccw);
@@ -956,7 +957,6 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_guided_slew_commands(const mavl
                 return MAV_RESULT_DENIED;
         }
 
-        plane.guided_state.target_alt_frame = packet.frame;
         plane.guided_state.last_target_alt = plane.current_loc.alt; // FIXME: Reference frame is not corrected for here
         plane.guided_state.target_alt_time_ms = AP_HAL::millis();
 
@@ -988,22 +988,33 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_guided_slew_commands(const mavl
 
         float new_target_heading = radians(wrap_180(packet.param2));
 
+        // Default value = no heading track
+        /* requires ardupilot_mega.xml change
+        if ( int(packet.param1) == HEADING_TYPE_DEFAULT) {
+            plane.guided_state.target_heading_type = GUIDED_HEADING_NONE;
+            return MAV_RESULT_ACCEPTED;
         // course over ground
-        if ( int(packet.param1) == HEADING_TYPE_COURSE_OVER_GROUND) { // compare as nearest int
+        } else 
+        */
+       if ( int(packet.param1) == HEADING_TYPE_COURSE_OVER_GROUND) { // compare as nearest int
             plane.guided_state.target_heading_type = GUIDED_HEADING_COG;
             plane.prev_WP_loc = plane.current_loc;
         // normal vehicle heading
         } else if (int(packet.param1) == HEADING_TYPE_HEADING) { // compare as nearest int
             plane.guided_state.target_heading_type = GUIDED_HEADING_HEADING;
         } else {
+            // fudge for now if we get an invalid result we assume it's "DEFAULT"
+            plane.guided_state.target_heading_type = GUIDED_HEADING_NONE;
+            return MAV_RESULT_ACCEPTED;
+
             //  MAV_RESULT_DENIED  means Command is invalid (is supported but has invalid parameters).
-            return MAV_RESULT_DENIED;
+            // return MAV_RESULT_DENIED;
         }
 
         plane.g2.guidedHeading.reset_I();
 
         plane.guided_state.target_heading = new_target_heading;
-        plane.guided_state.target_heading_accel_limit = MAX(packet.param3, 0.05f);
+        plane.guided_state.target_heading_accel_limit = MAX(is_zero(packet.param3)? 10.0f : packet.param3 , 10.0f); // the, previous limit of 0.05 was 0.29 degrees, not very useful
         plane.guided_state.target_heading_time_ms = AP_HAL::millis();
         return MAV_RESULT_ACCEPTED;
     }
