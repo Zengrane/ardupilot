@@ -1028,6 +1028,17 @@ void AP_AHRS_DCM::estimate_wind(void)
 #endif
 }
 
+#ifdef AP_AHRS_EXTERNAL_WIND_ESTIMATE_ENABLED
+void AP_AHRS_DCM::external_wind_estimate(float speed, float direction) {
+    Vector3f wind = Vector3f();
+    wind.z = 0;
+
+    wind.x = -cosf(radians(direction)) * speed;
+    wind.y = -sinf(radians(direction)) * speed;
+
+    _wind = wind;
+}
+#endif
 
 // return our current position estimate using
 // dead-reckoning or GPS

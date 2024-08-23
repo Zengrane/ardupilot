@@ -131,6 +131,12 @@ public:
 #endif
     }
 
+#if AP_AHRS_EXTERNAL_WIND_ESTIMATE_ENABLED
+    void external_wind_estimate(float speed, float direction) {
+        dcm.external_wind_estimate(speed, direction);
+    }
+#endif
+
     // return the parameter AHRS_WIND_MAX in metres per second
     uint8_t get_max_wind() const {
         return _wind_max;
