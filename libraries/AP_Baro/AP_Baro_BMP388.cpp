@@ -53,6 +53,8 @@ extern const AP_HAL::HAL &hal;
 #define BMP388_REG_CAL_P     0x36
 #define BMP388_REG_CAL_T     0x31
 
+#define BMP388_SOFT_RESET    0xB6
+
 AP_Baro_BMP388::AP_Baro_BMP388(AP_Baro &baro, AP_HAL::OwnPtr<AP_HAL::Device> _dev)
     : AP_Baro_Backend(baro)
     , dev(std::move(_dev))
@@ -107,6 +109,9 @@ bool AP_Baro_BMP388::init()
         return false;
     }
 
+    dev->write_register(BMP388_REG_CMD, BMP388_SOFT_RESET, true);
+    // we need to wait for the reset before loading the calibration data
+    hal.scheduler->delay(2);
     // read the calibration data
     read_registers(BMP388_REG_CAL_P, (uint8_t *)&calib_p, sizeof(calib_p));
     read_registers(BMP388_REG_CAL_T, (uint8_t *)&calib_t, sizeof(calib_t));
