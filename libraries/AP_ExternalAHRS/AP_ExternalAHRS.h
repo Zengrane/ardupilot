@@ -129,6 +129,7 @@ public:
         uint8_t instance;
         float pressure_pa;
         float temperature;
+        float altitude;
     } baro_data_message_t;
 
     typedef struct {
