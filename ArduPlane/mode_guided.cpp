@@ -140,6 +140,9 @@ void ModeGuided::update_target_altitude()
         int32_t delta_amt_i = (int32_t)(100.0 * delta_amt_f); 
         Location temp {};
         temp.alt = plane.guided_state.last_target_alt + delta_amt_i; // ...to avoid floats here, 
+        if(plane.guided_state.target_alt_frame == Location::AltFrame::ABOVE_HOME) {
+            temp.relative_alt = true;
+        }
         if (is_positive(plane.guided_state.target_alt_accel)) {
             temp.alt = MIN(plane.guided_state.target_alt, temp.alt);
         } else {
