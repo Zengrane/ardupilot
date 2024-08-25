@@ -441,7 +441,7 @@ uint8_t Copter::rate_controller_set_rates(uint8_t rate_decimation, RateControlle
                     warn_cpu_high ? "high" : "normal", (unsigned) attitude_rate);
 #if HAL_LOGGING_ENABLED
     if (attitude_rate > 1000) {
-        rates.fast_logging_rate = calc_gyro_decimation(rate_decimation, 2000);   // 1Khz
+        rates.fast_logging_rate = calc_gyro_decimation(rate_decimation, 1000);   // 1Khz
     } else {
          rates.fast_logging_rate = calc_gyro_decimation(rate_decimation, AP::scheduler().get_filtered_loop_rate_hz());
     }
