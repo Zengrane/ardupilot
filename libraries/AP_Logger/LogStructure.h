@@ -523,6 +523,16 @@ struct PACKED log_ARSP {
     uint8_t primary;
 };
 
+struct PACKED log_TORNADO_WIND {
+  LOG_PACKET_HEADER;
+  uint64_t time_us;
+  uint8_t instance;
+  float diffpressure;
+  float temperature;
+  float abspressL;
+  float abspressH;
+};
+
 struct PACKED log_MAV_Stats {
     LOG_PACKET_HEADER;
     uint64_t timestamp;
@@ -1227,6 +1237,7 @@ LOG_STRUCTURE_FROM_PRECLAND \
 LOG_STRUCTURE_FROM_CAMERA \
 LOG_STRUCTURE_FROM_MOUNT \
     { LOG_ARSP_MSG, sizeof(log_ARSP), "ARSP",  "QBffcffBBffB", "TimeUS,I,Airspeed,DiffPress,Temp,RawPress,Offset,U,H,Hp,TR,Pri", "s#nPOPP-----", "F-00B00-----", true }, \
+    { LOG_TORNADO_WIND_MSG, sizeof(log_TORNADO_WIND), "TORW",  "QBffff", "TimeUS,I,DiffPress,Temperature,AbsPressL,AbsPressH", "s#----", "F-----", true }, \
     LOG_STRUCTURE_FROM_BATTMONITOR \
     { LOG_MAG_MSG, sizeof(log_MAG), \
       "MAG", "QBhhhhhhhhhBI",    "TimeUS,I,MagX,MagY,MagZ,OfsX,OfsY,OfsZ,MOX,MOY,MOZ,Health,S", "s#GGGGGGGGG-s", "F-CCCCCCCCC-F", true }, \
@@ -1394,7 +1405,7 @@ enum LogMessages : uint8_t {
     LOG_RCOUT3_MSG,
     LOG_IDS_FROM_FENCE,
     LOG_IDS_FROM_HAL,
-
+    LOG_TORNADO_WIND_MSG,
     _LOG_LAST_MSG_
 };
 

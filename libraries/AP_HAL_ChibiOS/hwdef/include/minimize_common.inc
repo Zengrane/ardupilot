@@ -127,6 +127,7 @@ define AP_AIRSPEED_ANALOG_ENABLED 1
 define AP_AIRSPEED_MS5525_ENABLED 1
 define AP_AIRSPEED_SDP3X_ENABLED 1
 define AP_AIRSPEED_NMEA_ENABLED 1  # additional checks for vehicle type in .cpp
+define AP_AIRSPEED_AUAV_ENABLED 1
 define AP_AIRSPEED_DRONECAN_ENABLED HAL_ENABLE_DRONECAN_DRIVERS
 
 # don't need payload place mission items on these boards, it's very niche:
