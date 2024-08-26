@@ -167,6 +167,12 @@ const AP_Param::GroupInfo AP_ICEngine::var_info[] = {
 
     // 18 was IGNITION_RLY
 
+    // @Param: MAX_RETRY
+    // @DisplayName: Maximum number of retries
+    // @Description: If set 0 then there is no limit to retrials. If set to a value greater than 0 then the engine will retry starting the engine this many times before giving up.
+    // @User: Standard
+    // @Range: 0 254
+    AP_GROUPINFO("MAX_RETRY", 19, AP_ICEngine, max_crank_retry, 0),
 
     AP_GROUPEND
 };
@@ -340,8 +346,14 @@ void AP_ICEngine::update(void)
             if (!AP::rpm()->get_rpm(rpm_instance-1, rpm_value) ||
                 rpm_value < rpm_threshold) {
                 // engine has stopped when it should be running
-                state = ICE_START_DELAY;
-                GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Uncommanded engine stop");
+                if (max_crank_retry == 0 || crank_retry_ct < max_crank_retry) {
+                    state = ICE_START_DELAY;
+                    crank_retry_ct++;
+                    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Uncommanded engine stop");
+                } else {
+                    state = ICE_OFF;
+                    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Engine Max Crank Retry reached");
+                }
             }
         }
 #endif
@@ -360,6 +372,8 @@ void AP_ICEngine::update(void)
             // force ignition off when disarmed
             state = ICE_OFF;
         }
+        // reset the crank retry counter when disarmed
+        crank_retry_ct = 0;
     }
 
 #if AP_RPM_ENABLED
