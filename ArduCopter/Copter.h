@@ -688,6 +688,8 @@ private:
 #endif
     bool set_desired_speed(float speed) override;
 #if MODE_AUTO_ENABLED == ENABLED
+    bool set_pos_offset(const Vector3f &pos_offset_NED) override;
+    bool set_vel_offset(const Vector3f &vel_offset_NED) override;
     bool nav_scripting_enable(uint8_t mode) override;
     bool nav_script_time(uint16_t &id, uint8_t &cmd, float &arg1, float &arg2, int16_t &arg3, int16_t &arg4) override;
     void nav_script_time_done(uint16_t id) override;

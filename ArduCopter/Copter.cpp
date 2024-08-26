@@ -413,6 +413,22 @@ bool Copter::set_desired_speed(float speed)
 }
 
 #if MODE_AUTO_ENABLED == ENABLED
+// add an additional offset to vehicle's target position
+// units are m in NED frame
+bool Copter::set_pos_offset(const Vector3f &pos_offset_NED)
+{
+    pos_control->set_pos_offset_target_xy_cm(pos_offset_NED.topostype().xy() * 100.0);
+    return true;
+}
+
+// add an additional offset to vehicle's target velocity and acceleration
+// units are m/s in NED frame
+bool Copter::set_vel_offset(const Vector3f &vel_offset_NED)
+{
+    pos_control->set_vel_offset_target_xy_cms(vel_offset_NED.xy() * 100.0);
+    return true;
+}
+
 // returns true if mode supports NAV_SCRIPT_TIME mission commands
 bool Copter::nav_scripting_enable(uint8_t mode)
 {
