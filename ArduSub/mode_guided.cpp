@@ -9,6 +9,7 @@
 
 static Vector3p posvel_pos_target_cm;
 static Vector3f posvel_vel_target_cms;
+static Location::AltFrame posvel_frame;
 static uint32_t update_time_ms;
 
 struct {
@@ -127,6 +128,10 @@ void ModeGuided::guided_posvel_control_start()
     // initialise velocity controller
     position_control->init_z_controller();
     position_control->init_xy_controller();
+
+    // clear terrain offset
+    position_control->set_pos_offset_z_cm(0);
+    position_control->set_pos_offset_target_z_cm(0);
 
     // pilot always controls yaw
     set_auto_yaw_mode(AUTO_YAW_HOLD);
@@ -291,7 +296,7 @@ void ModeGuided::guided_set_velocity(const Vector3f& velocity, bool use_yaw, flo
 }
 
 // set guided mode posvel target
-bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, const Vector3f& velocity)
+bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, const Vector3f& velocity, Location::AltFrame frame)
 {
     // check we are in velocity control mode
     if (sub.guided_mode != Guided_PosVel) {
@@ -300,7 +305,7 @@ bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, cons
 
 #if AP_FENCE_ENABLED
     // reject destination if outside the fence
-    const Location dest_loc(destination, Location::AltFrame::ABOVE_ORIGIN);
+    const Location dest_loc(destination, frame);
     if (!sub.fence.check_destination_within_fence(dest_loc)) {
         LOGGER_WRITE_ERROR(LogErrorSubsystem::NAVIGATION, LogErrorCode::DEST_OUTSIDE_FENCE);
         // failure is propagated to GCS with NAK
@@ -308,17 +313,31 @@ bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, cons
     }
 #endif
 
+#if AP_RANGEFINDER_ENABLED
+    // reject ABOVE_TERRAIN frame if the rangefinder is missing or unhealthy
+    if (frame == Location::AltFrame::ABOVE_TERRAIN && !sub.rangefinder_alt_ok()) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Terrain data (rangefinder) not available");
+        return false;
+    }
+#endif
+
     update_time_ms = AP_HAL::millis();
     posvel_pos_target_cm = destination.topostype();
     posvel_vel_target_cms = velocity;
+    posvel_frame = frame;
 
-    position_control->input_pos_vel_accel_xy(posvel_pos_target_cm.xy(), posvel_vel_target_cms.xy(), Vector2f());
-    float dz = posvel_pos_target_cm.z;
-    position_control->input_pos_vel_accel_z(dz, posvel_vel_target_cms.z, 0);
-    posvel_pos_target_cm.z = dz;
+#if AP_RANGEFINDER_ENABLED
+    if (frame == Location::AltFrame::ABOVE_TERRAIN) {
+        // target offset is seafloor position estimate
+        position_control->set_pos_offset_target_z_cm(sub.rangefinder_state.rangefinder_terrain_offset_cm);
+
+        // current offset is (z - rf_target)
+        position_control->set_pos_offset_z_cm(sub.inertial_nav.get_position_z_up_cm() - posvel_pos_target_cm.z);
+    }
+#endif
 
 #if HAL_LOGGING_ENABLED
-    // log target
+    // log target TODO write frame to log
     sub.Log_Write_GuidedTarget(sub.guided_mode, destination, velocity);
 #endif
 
@@ -634,9 +653,23 @@ void ModeGuided::guided_posvel_control_run()
 
     // send position and velocity targets to position controller
     position_control->input_pos_vel_accel_xy(posvel_pos_target_cm.xy(), posvel_vel_target_cms.xy(), Vector2f());
+#if AP_RANGEFINDER_ENABLED
+    if (posvel_frame == Location::AltFrame::ABOVE_TERRAIN) {
+        // skip offset update if rangefinder is unhealthy
+        if (sub.rangefinder_alt_ok()) {
+            position_control->set_pos_offset_target_z_cm(sub.rangefinder_state.rangefinder_terrain_offset_cm);
+        }
+        position_control->set_pos_target_z_from_climb_rate_cm(posvel_vel_target_cms.z);
+    } else {
+        float pz = posvel_pos_target_cm.z;
+        position_control->input_pos_vel_accel_z(pz, posvel_vel_target_cms.z, 0);
+        posvel_pos_target_cm.z = pz;
+    }
+#else
     float pz = posvel_pos_target_cm.z;
     position_control->input_pos_vel_accel_z(pz, posvel_vel_target_cms.z, 0);
     posvel_pos_target_cm.z = pz;
+#endif
 
     // run position controller
     position_control->update_xy_controller();
