@@ -109,4 +109,25 @@ void AP_Camera_Mount::send_camera_capture_status(mavlink_channel_t chan) const
     }
 }
 
+// send camera thermal status message to GCS
+void AP_Camera_Mount::send_camera_thermal_status(mavlink_channel_t chan) const
+{
+    AP_Mount* mount = AP::mount();
+    if (mount != nullptr) {
+        return mount->send_camera_thermal_status(get_mount_instance(), chan);
+    }
+}
+
+#if AP_CAMERA_SCRIPTING_ENABLED
+// change camera settings not normally used by autopilot
+bool AP_Camera_Mount::change_setting(CameraSetting setting, float value)
+{
+    AP_Mount* mount = AP::mount();
+    if (mount != nullptr) {
+        return mount->change_setting(get_mount_instance(), setting, value);
+    }
+    return false;
+}
+#endif
+
 #endif // AP_CAMERA_MOUNT_ENABLED

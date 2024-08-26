@@ -461,6 +461,10 @@ bool AP_Camera::send_mavlink_message(GCS_MAVLINK &link, const enum ap_message ms
         CHECK_PAYLOAD_SIZE2(CAMERA_CAPTURE_STATUS);
         send_camera_capture_status(chan);
         break;
+    case MSG_CAMERA_THERMAL_STATUS:
+        CHECK_PAYLOAD_SIZE2(CAMERA_THERMAL_STATUS);
+        send_camera_thermal_status(chan);
+        break;
 
     default:
         // should not reach this; should only be called for specific IDs
@@ -611,6 +615,19 @@ void AP_Camera::send_camera_capture_status(mavlink_channel_t chan)
     for (uint8_t instance = 0; instance < AP_CAMERA_MAX_INSTANCES; instance++) {
         if (_backends[instance] != nullptr) {
             _backends[instance]->send_camera_capture_status(chan);
+        }
+    }
+}
+
+// send camera thermal status message to GCS
+void AP_Camera::send_camera_thermal_status(mavlink_channel_t chan)
+{
+    WITH_SEMAPHORE(_rsem);
+
+    // call each instance
+    for (uint8_t instance = 0; instance < AP_CAMERA_MAX_INSTANCES; instance++) {
+        if (_backends[instance] != nullptr) {
+            _backends[instance]->send_camera_thermal_status(chan);
         }
     }
 }
@@ -780,6 +797,19 @@ bool AP_Camera::get_state(uint8_t instance, camera_state_t& cam_state)
     }
     return backend->get_state(cam_state);
 }
+
+// change camera settings not normally used by autopilot
+bool AP_Camera::change_setting(uint8_t instance, CameraSetting setting, float value)
+{
+    WITH_SEMAPHORE(_rsem);
+
+    auto *backend = get_instance(instance);
+    if (backend == nullptr) {
+        return false;
+    }
+    return backend->change_setting(setting, value);
+}
+
 #endif // #if AP_CAMERA_SCRIPTING_ENABLED
 
 // return backend for instance number
