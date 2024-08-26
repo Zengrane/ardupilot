@@ -61,6 +61,8 @@
 #include <AP_HAL_ChibiOS/Semaphores.h>
 #define HAL_Semaphore ChibiOS::Semaphore
 #define HAL_BinarySemaphore ChibiOS::BinarySemaphore
+#include <AP_HAL_ChibiOS/CondMutex.h>
+#define HAL_CondMutex ChibiOS::CondMutex
 #endif
 
 /* string names for well known SPI devices */
@@ -140,3 +142,9 @@
 #endif
 #define HAL_USE_QUADSPI (HAL_USE_QUADSPI1 || HAL_USE_QUADSPI2)
 #define HAL_USE_OCTOSPI (HAL_USE_OCTOSPI1 || HAL_USE_OCTOSPI2)
+
+#if defined(STM32H7) || defined(STM32F7)
+#define HAL_INS_RATE_LOOP 1
+#else
+#define HAL_INS_RATE_LOOP 0
+#endif
