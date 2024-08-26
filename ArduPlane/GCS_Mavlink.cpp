@@ -941,6 +941,7 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_guided_slew_commands(const mavl
                     return MAV_RESULT_ACCEPTED;
                 }
                 plane.guided_state.target_alt = new_target_alt_rel;
+                plane.guided_state.target_alt_frame = Location::AltFrame::ABOVE_HOME;
                 break;
             }
             case MAV_FRAME_GLOBAL: {
@@ -949,6 +950,7 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_guided_slew_commands(const mavl
                     return MAV_RESULT_ACCEPTED;
                 }
                 plane.guided_state.target_alt = new_target_alt;
+                plane.guided_state.target_alt_frame = Location::AltFrame::ABSOLUTE;
                 break;
             }
             default:
@@ -956,7 +958,6 @@ MAV_RESULT GCS_MAVLINK_Plane::handle_command_int_guided_slew_commands(const mavl
                 return MAV_RESULT_DENIED;
         }
 
-        plane.guided_state.target_alt_frame = packet.frame;
         plane.guided_state.last_target_alt = plane.current_loc.alt; // FIXME: Reference frame is not corrected for here
         plane.guided_state.target_alt_time_ms = AP_HAL::millis();
 
