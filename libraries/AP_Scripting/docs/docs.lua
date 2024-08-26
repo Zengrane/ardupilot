@@ -1507,6 +1507,10 @@ function motors:get_forward() end
 ---@return number
 function motors:get_throttle() end
 
+-- get thrust motor input
+---@return number
+function motors:get_throttle_in() end
+
 -- get throttle motor output
 ---@return integer
 ---| '0' # Shut down
@@ -2354,10 +2358,22 @@ function vehicle:get_circle_radius() end
 ---@return boolean
 function vehicle:set_target_angle_and_climbrate(roll_deg, pitch_deg, yaw_deg, climb_rate_ms, use_yaw_rate, yaw_rate_degs) end
 
+-- desc
+---@param roll_deg number
+---@param pitch_deg number
+---@param yaw_deg number
+---@param thrust number
+---@param use_yaw_rate boolean
+---@param yaw_rate_degs number
+---@return boolean
+function vehicle:set_target_angle_and_thrust(roll_deg, pitch_deg, yaw_deg, thrust, use_yaw_rate, yaw_rate_degs) end
+
+-- desc
 -- Sets the target velocity using a Vector3f object in a guided mode.
 ---@param vel_ned Vector3f_ud -- North, East, Down meters / second
+---@param align_yaw_to_target? boolean
 ---@return boolean -- true on success
-function vehicle:set_target_velocity_NED(vel_ned) end
+function vehicle:set_target_velocity_NED(vel_ned, align_yaw_to_target) end
 
 -- desc
 ---@param target_vel Vector3f_ud
@@ -3525,6 +3541,30 @@ function fence:get_breach_time() end
 ---| 4 # Polygon
 ---| 8 # Minimum altitude
 function fence:get_breaches() end
+
+-- Returns minimum safe altitude (i.e. alt_min + margin)
+---@return number 
+function fence:get_safe_alt_min() end
+
+-- Returns maximum safe altitude (i.e. alt_max - margin)
+---@return number 
+function fence:get_safe_alt_max() end
+
+-- Returns configured fences
+---@return integer fence_type bitmask
+---| 1 # Maximim altitude
+---| 2 # Circle
+---| 4 # Polygon
+---| 8 # Minimum altitude
+function fence:present() end
+
+-- Returns enabled fences
+---@return integer fence_type bitmask
+---| 1 # Maximim altitude
+---| 2 # Circle
+---| 4 # Polygon
+---| 8 # Minimum altitude
+function fence:get_enabled_fences() end
 
 -- desc
 ---@class (exact) stat_t_ud
