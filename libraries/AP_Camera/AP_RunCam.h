@@ -23,6 +23,8 @@
 
 #include "AP_Camera_config.h"
 
+#include "AP_Camera_Backend.h"
+
 #if HAL_RUNCAM_ENABLED
 
 #include <AP_Param/AP_Param.h>
@@ -39,10 +41,13 @@
 
 /// @class	AP_RunCam
 /// @brief	Object managing a RunCam device
-class AP_RunCam
+class AP_RunCam : public AP_Camera_Backend
 {
 public:
     AP_RunCam();
+
+    // Constructor
+    using AP_Camera_Backend::AP_Camera_Backend;
 
     // do not allow copies
     CLASS_NO_COPY(AP_RunCam);
