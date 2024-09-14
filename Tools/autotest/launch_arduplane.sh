@@ -20,5 +20,5 @@ done
 
 echo $masters
 
-mavproxy.py ${masters} --map --console --load-module horizon  # --load module swarm # 
+mavproxy.py ${masters} --map #--console --load-module horizon  # --load module swarm # 
 

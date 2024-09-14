@@ -17,12 +17,12 @@ import signal
 import sys
 import csv
 
-n_agents = 3
+n_agents = 1
 # Connect to the vehicles
 seeker0 = seekerAgent("127.0.0.1:14551", 0)
-seeker1 = seekerAgent("127.0.0.1:14561", 1)
-seeker2 = seekerAgent("127.0.0.1:14571", 2)
-seekers = [seeker0, seeker1, seeker2]
+#seeker1 = seekerAgent("127.0.0.1:14561", 1)
+#seeker2 = seekerAgent("127.0.0.1:14571", 2)
+seekers = [seeker0]
 
 takeoff_location = dk.LocationGlobalRelative(-35.36487698, 149.17000667, 100)
 home_lat_lon = np.array([-35.36341649, 149.16525123])
