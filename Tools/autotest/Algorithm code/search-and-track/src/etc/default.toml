@@ -1,0 +1,42 @@
+[sim]
+[sim.time]
+dt = 0.5
+max_T = 300
+
+[nai]
+[nai.boundary]
+x = [0, 30]
+y = [0, 30]
+
+[target]
+[target.kinematics]
+states = [[10, 10, 0], [15, 15, 0], [10, 15, 0], [10, 20, 0]] #, [10, 20, 0]]
+speed = 0.03
+max_turn_rate = 1.0
+
+[searcher]
+[searcher.kinematics]
+speed = 1.0
+states = [[0, 0, 0], [0, 0, 0]]
+max_turn_rate = 2.5
+max_path_length = 20
+
+[searcher.cem]
+n_params = 5              # Number of sample configurations to take
+epsilon = 0.01            # Control variance to stop the optimisation
+alpha = 0.9               # Smooth update parameter
+n_elite = 3               # Number of elite samples to select
+n_samples = 10            # These samples are processed in parallel
+communication_period = 10 # number of CEM iterations to perform before communicating
+communication_cycles = 3  # total number of communication rounds
+
+[searcher.sensor]
+type = "circle"
+
+[sensor]
+[sensor.triangle]
+fov = 45  # degrees
+range = 3
+
+[sensor.circle]
+range = 2
