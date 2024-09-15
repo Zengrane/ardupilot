@@ -20,5 +20,7 @@ done
 
 echo $masters
 
-mavproxy.py ${masters} --map #--console --load-module horizon  # --load module swarm # 
+mavproxy.py --master=127.0.0.1:14551 --master=127.0.0.1:14561 --master=127.0.0.1:14571 --out=127.0.0.1:14550
+
+#mavproxy.py ${masters} #--map #--console --load-module horizon  # --load module swarm # 
 
