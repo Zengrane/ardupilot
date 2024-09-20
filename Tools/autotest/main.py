@@ -17,12 +17,12 @@ import signal
 import sys
 import csv
 
-n_agents = 1
+n_agents = 3
 # Connect to the vehicles
 seeker0 = seekerAgent("127.0.0.1:14551", 0)
-#seeker1 = seekerAgent("127.0.0.1:14561", 1)
-#seeker2 = seekerAgent("127.0.0.1:14571", 2)
-seekers = [seeker0]
+seeker1 = seekerAgent("127.0.0.1:14561", 1)
+seeker2 = seekerAgent("127.0.0.1:14571", 2)
+seekers = [seeker0, seeker1, seeker2]
 
 # Location where drone should take off and loiter
 takeoff_location = dk.LocationGlobalRelative(-35.35898964, 149.16463160, 100)
@@ -40,7 +40,7 @@ target_location = dk.LocationGlobalRelative(target_lat_lon[0], target_lat_lon[1]
 movement_speed = 0.0001  # Latitude/Longitude change per update
 # How often target position is recalculated
 update_interval = 5  # seconds
-movement_direction = 45  # direction in degrees from north (0 is north, 90 is east, etc.)
+movement_direction = 0  # direction in degrees from north (0 is north, 90 is east, etc.)
 
 # Convert direction to radians
 direction_radians = math.radians(movement_direction)

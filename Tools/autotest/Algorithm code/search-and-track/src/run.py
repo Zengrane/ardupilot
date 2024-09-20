@@ -102,7 +102,7 @@ def reward_fn(plans, nai, beliefs, agents):
     "--config_fname",
     type=str,
     help="Path to the *.toml configuration.",
-    default="etc/default.toml",
+    default="/home/ubuntu/Desktop/ardupilot/Tools/autotest/Algorithm code/search-and-track/src/etc/default.toml",
 )
 @click.option(
     "--output",
@@ -135,7 +135,7 @@ def main(config_fname: str, output: str):
 
     # Simulation loop
     writer = FFMpegWriter(fps=10)
-    with writer.saving(fig, f"../results/{output}.mp4", 250):
+    with writer.saving(fig, f"/home/ubuntu/Desktop/ardupilot/Tools/autotest/Algorithm code/search-and-track/results/{output}.mp4", 250):
         while agents[0].gt <= _cfg["sim"]["time"]["max_T"]:
             print("------------ Replanning... ------------")
             # Reset all the controls for simplicity.
