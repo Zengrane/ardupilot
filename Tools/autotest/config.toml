@@ -1,0 +1,38 @@
+# Simulation parameters
+[sim]
+[sim.time]
+dt = 0.5              # Time step for the simulation
+max_T = 300           # Maximum simulation time
+
+# Navigation-Aware Intelligence (NAI) parameters
+[nai]
+boundary = [0, 0, 200, 200]  # [x_min, y_min, x_max, y_max]
+search_region = [0, 0, 200, 200]  # Search area for the drone
+
+# Searcher (Agent) parameters
+[searcher]
+agent_count = 1              # Number of agents
+agent_type = "CEMAgent"      # Type of agent
+
+# Searcher kinematics
+[searcher.kinematics]
+speed = 1.0                  # Speed of the searcher
+states = [[0, 0, 0], [0, 0, 0]]  # Initial states (latitude, longitude, altitude)
+max_turn_rate = 2.5          # Max turn rate for the searcher
+max_path_length = 20         # Max path length for the searcher
+
+# CEM parameters
+[searcher.cem]
+n_params = 5                 # Number of sample configurations
+epsilon = 0.01               # Control variance to stop optimization
+alpha = 0.9                  # Smooth update parameter
+n_elite = 3                  # Number of elite samples to select
+n_samples = 10               # Number of samples processed in parallel
+communication_period = 10    # Number of CEM iterations before communicating
+communication_cycles = 3     # Total number of communication rounds
+
+# Sensor definitions
+[searcher.sensor]
+type = "circle"              # Type of sensor
+range = 2                    # Range of the circle sensor
+

@@ -1,121 +1,99 @@
-"""
-@author: DDN
-"""
-from dronekit import connect, VehicleMode, LocationGlobalRelative, LocationGlobal
+from dronekit import connect, VehicleMode, LocationGlobalRelative
 import dronekit as dk
 import time
-import math
-import cv2
-from time import sleep
-from pymavlink import mavutil
 import numpy as np
-from numpy import rad2deg as deg
-import math
 from dk_agent_plane import seekerAgent
-from geolocation import calc_east_north, get_distance_meters, ned_to_azel
-import signal
-import sys
-import csv
+from geolocation import calc_east_north, get_distance_meters
 
-n_agents = 3
+n_agents = 1
 # Connect to the vehicles
 seeker0 = seekerAgent("127.0.0.1:14551", 0)
-seeker1 = seekerAgent("127.0.0.1:14561", 1)
-seeker2 = seekerAgent("127.0.0.1:14571", 2)
-seekers = [seeker0, seeker1, seeker2]
+seekers = [seeker0]
 
-# Location where drone should take off and loiter
-takeoff_location = dk.LocationGlobalRelative(-35.35898964, 149.16463160, 100)
-# Home location of the drone
+# The coordinates and altitude where the drone will take off 
+takeoff_location = dk.LocationGlobalRelative(-35.36487698, 149.17000667, 100)
+
+# Home base coordinates 
 home_lat_lon = np.array([-35.36341649, 149.16525123])
-# Defines home location of the drone representing a geographic location
-# relative to the drone 
-home_location = dk.LocationGlobalRelative(home_lat_lon[0], home_lat_lon[1], 100)
 
-# Initial target location
-target_lat_lon = (-35.36290851, 149.15882125) 
-target_location = dk.LocationGlobalRelative(target_lat_lon[0], target_lat_lon[1], 100)
+# Define waypoints
+waypoints = [
+    dk.LocationGlobalRelative(-35.36486230, 149.16401189, 100),  # First waypoint
+    dk.LocationGlobalRelative(-35.36307697, 149.15926171, 100),  # Second waypoint
+    dk.LocationGlobalRelative(-35.35867523, 149.16073485, 100),  # Third waypoint
+]
 
-# Target movement speed
-movement_speed = 0.0001  # Latitude/Longitude change per update
-# How often target position is recalculated
-update_interval = 5  # seconds
-movement_direction = 0  # direction in degrees from north (0 is north, 90 is east, etc.)
-
-# Convert direction to radians
-direction_radians = math.radians(movement_direction)
-
-# Convert speed to latitude/longitude change per update
-lat_change_per_update = movement_speed * math.cos(direction_radians)
-lon_change_per_update = movement_speed * math.sin(direction_radians)
-
-# Assign home location to each seeker
+# Home location assigned to each drone
 for idx in range(n_agents):
     seekers[idx].home_lat_lon = home_lat_lon
 
-# Takeoff all drones
+# Takeoff
 takeoff_status = False
-while True:
-    if takeoff_status:
-        break
-
-    # Iterates over each drone
+while not takeoff_status:
     for idx in range(n_agents):
-        if not seekers[idx].vehicle.armed:  # check if takeoff occurred
+        if not seekers[idx].vehicle.armed:
             seekers[idx].arm_and_takeoff()
             seekers[idx].mode = VehicleMode("GUIDED")
-            sleep(1)
-
+            time.sleep(1)
+    
     for idx in range(n_agents):
         seekers[idx].vehicle.simple_goto(takeoff_location)
-        print(" Altitude: ", seekers[idx].vehicle.location.global_relative_frame.alt)
-        if seekers[idx].vehicle.location.global_relative_frame.alt >= 100 * 0.9:
-            print(f"UAV{idx + 1} Reached target altitude")
+        if seekers[idx].vehicle.location.global_relative_frame.alt >= 90:  # 90% of 100
+            print(f"UAV{idx + 1} reached target altitude")
             takeoff_status = True
-        else:
-            takeoff_status = False
-            break
+        time.sleep(1)
+
+print("All drones taken off")
+
+# Track which waypoints have been reached
+waypoint_index = 0
+agents_done = [False] * n_agents
+
+# Main loop for waypoint navigation
+while waypoint_index < len(waypoints):
+    for idx in range(n_agents):
+        current_waypoint = waypoints[waypoint_index]
+        
+        # Command drone to go to the current waypoint
+        seekers[idx].vehicle.simple_goto(current_waypoint)
+
+        # Get current drone position
+        drone_location = seekers[idx].vehicle.location.global_relative_frame
+        
+        # Calculate distance to waypoint
+        dE, dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
+                                 drone_location.lat, drone_location.lon)
+        agent_pos_NED = np.array([dN, dE, -drone_location.alt])
+        
+        # Convert waypoint to NED coordinates
+        waypoint_dE, waypoint_dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
+                                                    current_waypoint.lat, current_waypoint.lon)
+        waypoint_pos_NED = np.array([waypoint_dN, waypoint_dE, -current_waypoint.alt])
+        
+        # Calculate distance to waypoint
+        distance_to_waypoint = get_distance_meters(agent_pos_NED, waypoint_pos_NED)
+
+        print(f"Distance to Waypoint for UAV {idx + 1}: {distance_to_waypoint:.2f} meters")
+
+        # Check if the drone has reached the waypoint
+        if distance_to_waypoint <= 80. and not agents_done[idx]:
+            agents_done[idx] = True
+            print(f"UAV {idx + 1} reached Waypoint {waypoint_index + 1}")
+
+    # Check if all agents are done with the current waypoint
+    if all(agents_done):
+        waypoint_index += 1  # Move to the next waypoint
+        agents_done = [False] * n_agents  # Reset for next waypoint
+        print(f"Moving to Waypoint {waypoint_index + 1 if waypoint_index < len(waypoints) else 'completed'}")
 
     time.sleep(1)
 
-print("all drones taken off")
+print("All waypoints reached")
 
-# An array that tracks which drones have reached the target
-agents_done = np.zeros(shape=n_agents, dtype=bool)
 
-# Main loop to navigate the drones
-while True:
 
-    # Update the target location dynamically in a straight line
-    target_lat_lon = (
-        target_lat_lon[0] + lat_change_per_update,
-        target_lat_lon[1] + lon_change_per_update
-    )
-    target_location = dk.LocationGlobalRelative(target_lat_lon[0], target_lat_lon[1], 100)
-    print(f"Updated target location to: {target_lat_lon}")
 
-    # Calculate east and north coordinates relative to the home location
-    dE_target_from_home, dN_target_from_home = calc_east_north(home_lat_lon[0], home_lat_lon[1],
-                                                               target_lat_lon[0], target_lat_lon[1])
-    target_pos_NED_init = np.array([dN_target_from_home, dE_target_from_home, -100.])
-
-    for idx in range(n_agents):
-        dE, dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
-                                 seekers[idx].vehicle.location.global_relative_frame.lat,
-                                 seekers[idx].vehicle.location.global_relative_frame.lon)
-
-        agent_pos_NED = np.array([dN, dE, -seekers[idx].vehicle.location.global_relative_frame.alt])
-        target_pos_NED = target_pos_NED_init
-
-        seekers[idx].vehicle.simple_goto(target_location)
-
-        distance_to_target = get_distance_meters(agent_pos_NED, target_pos_NED)
-        if distance_to_target <= 50.:
-            if not agents_done[idx]:
-                agents_done[idx] = True
-                break
-
-    if all(agents_done):
-        break
-
-    time.sleep(update_interval)
+"""
+Test roll/pitch control: set_attitude command here (roll_angle and pitch_angle are in degrees)
+"""
+# seekers[idx].set_attitude(roll_angle=10., pitch_angle=1., thrust=0.5, duration=10)
