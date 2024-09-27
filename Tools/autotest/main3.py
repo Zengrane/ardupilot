@@ -20,6 +20,13 @@ home_lat_lon = np.array([-35.36341649, 149.16525123])
 for seeker in seekers:
     seeker.home_lat_lon = home_lat_lon
 
+# Setting NAI (Area that each drone should search for targets)
+lat_min = -35.36640660
+lat_max = -35.35299608
+lon_min = 149.15338018 
+lon_max = 149.18100582
+
+
 # Takeoff function
 def takeoff_drone(seeker):
     while not seeker.vehicle.armed:
@@ -37,26 +44,20 @@ for seeker in seekers:
 
 print("All drones taken off")
 
-# Function to generate waypoints using CEM
 def generate_waypoints(current_location, n_samples=100, n_best=10, mutation=0.01):
-    """Generate new waypoints using CEM."""
-    # List to store best waypoints 
+    """Generate new waypoints using CEM within a defined search area."""
     best_waypoints = []
-    
-    
-    # Loops n_samples amount of times (100) to generate new waypoints
+
     for _ in range(n_samples):
-        # Generate random waypoints within a certain distance
-        # Adds randomness to coordinates then uses mutation (how much you can change the position)
-        new_lat = current_location.lat + (random.uniform(-1, 1) * mutation)
-        new_lon = current_location.lon + (random.uniform(-1, 1) * mutation)
-        # Generates new waypoint with fixed altitude
+        # Generate random waypoints within the defined bounding box
+        new_lat = random.uniform(lat_min, lat_max)
+        new_lon = random.uniform(lon_min, lon_max)
+
         waypoint = LocationGlobalRelative(new_lat, new_lon, 100)
-        
+
         # Calculate a cost (TO DO)
         cost = np.random.rand()  
         
-        # Store waypoint and its cost
         best_waypoints.append((waypoint, cost))
     
     # Sort by cost and keep the best ones
@@ -68,9 +69,15 @@ def generate_waypoints(current_location, n_samples=100, n_best=10, mutation=0.01
     for waypoint, _ in best_waypoints:
         new_lat = waypoint.lat + (random.uniform(-0.0001, 0.0001))
         new_lon = waypoint.lon + (random.uniform(-0.0001, 0.0001))
+        
+        # Ensure the new waypoints are still within the bounding box
+        new_lat = max(lat_min, min(lat_max, new_lat))
+        new_lon = max(lon_min, min(lon_max, new_lon))
+
         new_waypoints.append(LocationGlobalRelative(new_lat, new_lon, 100))
     
     return new_waypoints
+
 
 # Main loop for waypoint navigation
 while True:
