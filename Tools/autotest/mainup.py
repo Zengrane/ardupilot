@@ -38,6 +38,25 @@ target2_lon = 149.16600000
 detection_range = 100.0
 target_lock = threading.Lock()
 
+# Focus parameter: (0.0 = 100% coverage, 1.0 = 100% target focus)
+focus_on_targets_ratio = None
+
+while focus_on_targets_ratio is None:
+    try:
+        user_input = input("Enter focus ratio (0.0 for 100% coverage, 1.0 for 100% target focus): ")
+        focus_on_targets_ratio = float(user_input)
+
+        if focus_on_targets_ratio < 0.0 or focus_on_targets_ratio > 1.0:
+            print("Please enter a value between 0.0 and 1.0.")
+            focus_on_targets_ratio = None
+
+    except ValueError:
+        print("Invalid input. Please enter a numerical value between 0.0 and 1.0.")
+
+# Initialize detection states
+target1_detected = False
+target2_detected = False
+
 # Update the target's location within the NAI
 def update_target_location():
     global target1_lat, target1_lon, target2_lat, target2_lon
@@ -45,7 +64,6 @@ def update_target_location():
         # Acquires the lock to ensure only one thread can modify target coordinates
         with target_lock:
             # Target 1
-            # Updates coordinates by adding a small random value
             target1_lat += random.uniform(-0.00005, 0.00005)
             target1_lon += random.uniform(-0.00005, 0.00005)
             target1_lat = max(lat_min, min(lat_max, target1_lat))
@@ -62,10 +80,7 @@ def update_target_location():
         time.sleep(8)  
 
 def detect_targets(seeker):
-    global target_detected, was_target_detected
-    target1_detected = False  # State for target 1
-    target2_detected = False  # State for target 2
-    
+    global target1_detected, target2_detected
     while True:
         current_location = seeker.vehicle.location.global_relative_frame
         dE, dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
@@ -111,7 +126,6 @@ def detect_targets(seeker):
                 target2_detected = False  # Update state to not detected
 
         time.sleep(1)
-
 
 # Takeoff function
 def takeoff_drone(seeker):
@@ -174,24 +188,63 @@ for seeker in seekers:
 while True:
     for seeker in seekers:
         current_location = seeker.vehicle.location.global_relative_frame
-        waypoints = generate_waypoints(current_location)
+        dE, dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
+                                 current_location.lat, current_location.lon)
+        drone_pos_NED = np.array([dN, dE, -current_location.alt])
+        
+        # Checks if any target is detected
+        with target_lock:
+            target_detected = any([target1_detected, target2_detected])
 
-        for waypoint in waypoints:
-            seeker.vehicle.simple_goto(waypoint)
+        # Dynamic focus decision based on user-defined ratio (Determines whether drones should focus on target or cover area)
+        if target_detected and random.random() < focus_on_targets_ratio:  # Ratio for focusing (Checks if a target was detected and if a random number is less than the ratio)
+            # Focus on detected targets if both conditions met
+            print("Focusing on detected targets...")
+            # Stores distances to detected targets
+            target_dists = []
+            # Calculates east and north coordinates of target 1 and converts them to NED
+            if target1_detected:
+                target1_dE, target1_dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
+                                                           target1_lat, target1_lon)
+                target1_pos_NED = np.array([target1_dN, target1_dE, -100])
+                distance_to_target1 = get_distance_meters(drone_pos_NED, target1_pos_NED)
+                target_dists.append((distance_to_target1, target1_lat, target1_lon))
 
-            while True:
-                drone_location = seeker.vehicle.location.global_relative_frame
-                dE, dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
-                                         drone_location.lat, drone_location.lon)
-                agent_pos_NED = np.array([dN, dE, -drone_location.alt])
-                waypoint_dE, waypoint_dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
-                                                            waypoint.lat, waypoint.lon)
-                waypoint_pos_NED = np.array([waypoint_dN, waypoint_dE, -waypoint.alt])
-                distance_to_waypoint = get_distance_meters(agent_pos_NED, waypoint_pos_NED)
+            # Calculates east and north coordinates of target 2 and converts them to NED
+            if target2_detected:
+                target2_dE, target2_dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
+                                                           target2_lat, target2_lon)
+                target2_pos_NED = np.array([target2_dN, target2_dE, -100])
+                distance_to_target2 = get_distance_meters(drone_pos_NED, target2_pos_NED)
+                target_dists.append((distance_to_target2, target2_lat, target2_lon))
 
-                if distance_to_waypoint <= 100.:
-                    break
+            # Determine closest target, and command drone to go to the closest waypoint of that target
+            closest_target = min(target_dists, key=lambda x: x[0]) if target_dists else None
+            if closest_target:
+                closest_lat, closest_lon = closest_target[1], closest_target[2]
+                closest_waypoint = LocationGlobalRelative(closest_lat, closest_lon, 100)
+                seeker.vehicle.simple_goto(closest_waypoint)
 
-                time.sleep(1)
+        # If the previous condition is not met make the drone focus on covering area
+        else:
+            # Focus on area coverage
+            print("Covering the area...")
+            waypoints = generate_waypoints(current_location)
+            for waypoint in waypoints:
+                seeker.vehicle.simple_goto(waypoint)
+                while True:
+                    drone_location = seeker.vehicle.location.global_relative_frame
+                    dE, dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
+                                             drone_location.lat, drone_location.lon)
+                    agent_pos_NED = np.array([dN, dE, -drone_location.alt])
+                    waypoint_dE, waypoint_dN = calc_east_north(home_lat_lon[0], home_lat_lon[1],
+                                                                waypoint.lat, waypoint.lon)
+                    waypoint_pos_NED = np.array([waypoint_dN, waypoint_dE, -waypoint.alt])
+                    distance_to_waypoint = get_distance_meters(agent_pos_NED, waypoint_pos_NED)
+
+                    if distance_to_waypoint <= 100.:
+                        break
+
+                    time.sleep(1)
 
     time.sleep(1)
