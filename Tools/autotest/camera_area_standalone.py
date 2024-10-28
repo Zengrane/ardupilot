@@ -114,7 +114,7 @@ if __name__ == "__main__":
     init_lat = -32.0
     init_lon = 138.0
     cam_pitch = 49.2  # cam_pitch = 0 (looking down)
-    cam_yaw = 10.
+    cam_yaw = -90.
     cam_roll = 0.
     r = 0
     p = 0

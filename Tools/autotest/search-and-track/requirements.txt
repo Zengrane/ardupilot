@@ -1,0 +1,7 @@
+click
+./resources/dubins
+matplotlib==3.7.1
+numpy==1.24.2
+ray
+shapely==2.0.1
+toml==0.10.2
