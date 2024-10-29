@@ -18,12 +18,39 @@ def auto_str(cls):
     return cls
 
 
+def constrain_pitch(pitch: float) -> float:
+    """
+    Constrain pitch to ±90 degrees.
+    :param pitch: Current pitch value
+    :return: Constrained pitch value
+    """
+    return max(min(pitch, 90), -90)
+
+
+def constrain_yaw(yaw: float) -> float:
+    """
+    Constrain yaw to 0-360 degrees (wrap around).
+    :param yaw: Current yaw value
+    :return: Constrained yaw value (0 to 360 degrees)
+    """
+    return yaw % 360
+
+
+def constrain_roll(roll: float) -> float:
+    """
+    Constrain roll to -45 to 45 degrees.
+    :param roll: Current roll value
+    :return: Constrained roll value
+    """
+    return max(min(roll, 45), -45)
+
+
 @auto_str
 class Attitude:
     def __init__(self, yaw_deg: float, pitch_deg: float, roll_deg: float):
-        self.yaw_deg = yaw_deg
-        self.pitch_deg = pitch_deg
-        self.roll_deg = roll_deg
+        self.yaw_deg = constrain_yaw(yaw_deg)
+        self.pitch_deg = constrain_pitch(pitch_deg)
+        self.roll_deg = constrain_roll(roll_deg)
 
     @property
     def pry_deg(self) -> Tuple[float, float, float]:
@@ -94,11 +121,12 @@ def camera_perimeter(camera: Camera,
     :param camera: camera object representing the physical hardware
     :param position: Position of UAS
     :param attitude: Attitude of UAS
-    :return: A list camera corners projected onto the ground
+    :param range_m: Range of the camera in meters
+    :return: A list of camera corners projected onto the ground
     """
     camera_params = cuav_util_modified.CameraParams(camera.lens_m, camera.sensor_size_m, *camera.res_px)  # CUAV object
 
-    # calculate the pixel position offsets of the camera corners
+    # Calculate the pixel position offsets of the camera corners
     pitch, roll, yaw = attitude.pry_deg
     pixel_positions = [cuav_util_modified.pixel_coordinates(px[0], px[1],
                                                             *position.lla,
@@ -108,8 +136,9 @@ def camera_perimeter(camera: Camera,
                                                             camera_params) for px in
                        [(0, 0), (camera_params.xresolution, 0), (camera_params.xresolution, camera_params.yresolution),
                         (0, camera_params.yresolution)]]
+
     if any(pixel_position is None for pixel_position in pixel_positions):
-        # at least one of the pixels is not on the ground so it doesn't make sense to try to draw the polygon
+        # At least one of the pixels is not on the ground so it doesn't make sense to try to draw the polygon
         return None
 
     trapezoid_points = []
@@ -132,7 +161,7 @@ def camera_perimeter(camera: Camera,
 if __name__ == "__main__":
     init_lat = -32.0
     init_lon = 138.0
-    cam_pitch = 49.2  # cam_pitch = 0 (looking down)
+    cam_pitch = 49.2  # cam_pitch = 0 (looking straight down)
     cam_yaw = 10.
     cam_roll = 0.
     r = 0
@@ -151,7 +180,7 @@ if __name__ == "__main__":
 
     # Update the camera's pitch to keep the target within the FOV
     dynamic_pitch = calculate_pitch_to_target(pos, target_pos)
-    att.pitch_deg = dynamic_pitch
+    att.pitch_deg = constrain_pitch(dynamic_pitch)  # Apply the pitch constraint
 
     perim_points = camera_perimeter(Camera.basler_camera(cam_yaw, cam_pitch, cam_roll), pos, att, rangee)
     if perim_points is None:
