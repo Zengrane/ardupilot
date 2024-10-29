@@ -11,6 +11,9 @@ Exploration Mode: If no targets are detected, the drones explore the specified s
 Multi-threading: Threads are used to handle target location updates, target detection, and waypoint navigation concurrently for each drone.
 
 # Steps
+Ensure you are in the current directory:
+/ardupilot/Tools/autotest
+
 Several versions of the implementation are available to run
 
 To launch a single agent tracking multiple targets with focus ratio, run:
